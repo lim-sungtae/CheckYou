@@ -28,7 +28,7 @@ namespace CheckYou
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[server] init 실패: {ex.Message}");
+                Logger.Error($"[server] init 실패: {ex.Message}");
                 return null;
             }
         }
@@ -41,7 +41,7 @@ namespace CheckYou
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[server] flags 조회 실패: {ex.Message}");
+                Logger.Error($"[server] flags 조회 실패: {ex.Message}");
                 return null;
             }
         }

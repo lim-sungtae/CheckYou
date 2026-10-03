@@ -1,7 +1,6 @@
 {
   "serverUrl": "http://localhost:5080",
   "intervalSeconds": 5,
-  "hideConsole": true,
   "blockedTitleKeywords": [
     "YouTube"
   ],

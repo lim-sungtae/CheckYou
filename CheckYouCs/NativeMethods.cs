@@ -25,26 +25,6 @@ namespace CheckYou
         [DllImport("user32.dll", SetLastError = true)]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-        // 콘솔 창 숨김용.
-        [DllImport("kernel32.dll")]
-        public static extern IntPtr GetConsoleWindow();
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        public const int SW_HIDE = 0;
-
-        // 현재 프로세스의 콘솔 창을 숨긴다. (창이 없으면 아무 일도 안 함)
-        public static void HideConsoleWindow()
-        {
-            IntPtr hWnd = GetConsoleWindow();
-            if (hWnd != IntPtr.Zero)
-            {
-                ShowWindow(hWnd, SW_HIDE);
-            }
-        }
-
         public static string GetWindowTitle(IntPtr hWnd)
         {
             int length = GetWindowTextLengthW(hWnd);

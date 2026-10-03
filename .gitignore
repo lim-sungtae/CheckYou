@@ -19,3 +19,4 @@ CheckYouServer/config/state.json
 
 # ===== 기타 =====
 *.log
+logs/

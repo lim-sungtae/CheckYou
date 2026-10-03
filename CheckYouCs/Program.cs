@@ -17,26 +17,11 @@ namespace CheckYou
 
         private static async Task<int> Main()
         {
-            // 콘솔 로그의 한글이 깨지지 않도록 UTF-8 출력으로 고정.
-            try
-            {
-                Console.OutputEncoding = System.Text.Encoding.UTF8;
-            }
-            catch
-            {
-                // 리다이렉트 등 일부 환경에서 실패할 수 있으나 치명적이지 않음
-            }
-
             string baseDir = AppContext.BaseDirectory;
+            Logger.Init(baseDir);
+
             string configPath = Path.Combine(baseDir, "config", "config.json");
             _config = Config.Load(configPath);
-
-            // B안: 콘솔 앱 그대로이지만 시작하자마자 콘솔 창을 숨겨 백그라운드로 동작.
-            // (창이 아주 잠깐 깜빡인 뒤 사라질 수 있음)
-            if (_config.HideConsole)
-            {
-                NativeMethods.HideConsoleWindow();
-            }
 
             _server = new ServerClient(_config.ServerUrl);
 
@@ -45,12 +30,11 @@ namespace CheckYou
             BlockState? initialized = await _server.InitAsync(startup);
             _current = initialized ?? startup; // 서버 실패 시 로컬 config(전부 적용)로 동작
 
-            Console.WriteLine("CheckYou (C#) 시작");
-            Console.WriteLine($"  서버 주소      : {_config.ServerUrl}");
-            Console.WriteLine($"  검사 주기      : {_current.IntervalSeconds}초");
-            Console.WriteLine($"  제한 항목 수   : {_current.Items.Count}개 (시작 시 전부 제한적용)");
-            Console.WriteLine($"  서버 연동      : {(initialized != null ? "성공" : "실패 - 로컬 config로 동작")}");
-            Console.WriteLine("  (Ctrl+C 로 종료)");
+            Logger.Info("CheckYou (C#) 시작");
+            Logger.Info($"  서버 주소      : {_config.ServerUrl}");
+            Logger.Info($"  검사 주기      : {_current.IntervalSeconds}초");
+            Logger.Info($"  제한 항목 수   : {_current.Items.Count}개 (시작 시 전부 제한적용)");
+            Logger.Info($"  서버 연동      : {(initialized != null ? "성공" : "실패 - 로컬 config로 동작")}");
 
             using CancellationTokenSource cts = new();
             Console.CancelKeyPress += (_, e) =>
@@ -68,7 +52,7 @@ namespace CheckYou
                 // 정상 종료
             }
 
-            Console.WriteLine("CheckYou 종료");
+            Logger.Info("CheckYou 종료");
             return 0;
         }
 
@@ -141,7 +125,7 @@ namespace CheckYou
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine($"[실패] '{name}' 조회 불가: {ex.Message}");
+                    Logger.Error($"[실패] '{name}' 조회 불가: {ex.Message}");
                     continue;
                 }
 
@@ -213,7 +197,7 @@ namespace CheckYou
                 int pid = proc.Id;
                 string procName = proc.ProcessName;
                 proc.Kill();
-                Console.WriteLine($"[종료] pid={pid} ({procName}) / 사유: {reason}");
+                Logger.Info($"[종료] pid={pid} ({procName}) / 사유: {reason}");
             }
             catch (InvalidOperationException)
             {
@@ -221,7 +205,7 @@ namespace CheckYou
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[실패] 종료 불가 ({reason}): {ex.Message}");
+                Logger.Error($"[실패] 종료 불가 ({reason}): {ex.Message}");
             }
         }
     }

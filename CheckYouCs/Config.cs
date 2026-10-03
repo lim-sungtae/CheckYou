@@ -16,10 +16,6 @@ namespace CheckYou
         [JsonPropertyName("intervalSeconds")]
         public int IntervalSeconds { get; set; } = 5;
 
-        // true 면 시작 시 콘솔 창을 숨겨 백그라운드로 동작한다. (디버깅 시 false 로)
-        [JsonPropertyName("hideConsole")]
-        public bool HideConsole { get; set; } = true;
-
         [JsonPropertyName("blockedTitleKeywords")]
         public List<string> BlockedTitleKeywords { get; set; } = new();
 
@@ -56,7 +52,7 @@ namespace CheckYou
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[config] 읽기 실패, 기본값 사용: {ex.Message}");
+                Logger.Error($"[config] 읽기 실패, 기본값 사용: {ex.Message}");
             }
 
             Config fallback = new()
