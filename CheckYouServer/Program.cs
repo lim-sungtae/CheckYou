@@ -48,6 +48,10 @@ namespace CheckYouServer
                 ContentRootPath = AppContext.BaseDirectory,
             });
 
+            // Windows 서비스로 설치되면 서비스로, 그냥 실행하면 일반 앱으로 동작한다.
+            // (서비스로 등록 시 로그인 없이 부팅 시 자동 시작 가능)
+            builder.Host.UseWindowsService();
+
             // 로그는 파일로 보낸다. 요청마다 찍히는 소음은 Warning 이상만.
             builder.Logging.ClearProviders();
             builder.Logging.AddProvider(new FileLoggerProvider());
