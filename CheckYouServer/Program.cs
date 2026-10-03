@@ -4,18 +4,25 @@ namespace CheckYouServer
     {
         private static void Main(string[] args)
         {
-            // 콘솔 로그의 한글이 깨지지 않도록 UTF-8 출력으로 고정.
+            // WinExe(창 없음): 로그를 파일(logs\server.log)로 남긴다.
+            FileLog.Init(AppContext.BaseDirectory);
+            FileLog.Info("===== CheckYouServer 시작 =====");
+
             try
             {
-                Console.OutputEncoding = System.Text.Encoding.UTF8;
+                Run(args);
             }
-            catch
+            catch (Exception ex)
             {
-                // 리다이렉트 등 일부 환경에서 실패할 수 있으나 치명적이지 않음
+                // 기동 중 치명적 오류도 파일에 남긴다.
+                FileLog.Error($"서버 비정상 종료: {ex}");
             }
 
-            Console.WriteLine("===== CheckYouServer 시작 =====");
+            FileLog.Info("===== CheckYouServer 종료 =====");
+        }
 
+        private static void Run(string[] args)
+        {
             // 서버 설정(config\server.json) 로드.
             ServerConfig serverConfig = ServerConfig.Load();
 
@@ -23,7 +30,7 @@ namespace CheckYouServer
             if (serverConfig.KeepAwake)
             {
                 bool ok = PowerKeepAwake.Enable();
-                Console.WriteLine($"[power] 절전 억제: {(ok ? "활성" : "실패")}");
+                FileLog.Info($"[power] 절전 억제: {(ok ? "활성" : "실패")}");
             }
 
             // ContentRoot 를 실행파일 폴더로 고정한다. (어느 작업 디렉터리에서 실행하든 wwwroot 를 찾음)
@@ -32,6 +39,12 @@ namespace CheckYouServer
                 Args = args,
                 ContentRootPath = AppContext.BaseDirectory,
             });
+
+            // 콘솔이 없으므로 로그는 파일로 보낸다. 요청마다 찍히는 소음은 Warning 이상만.
+            builder.Logging.ClearProviders();
+            builder.Logging.AddProvider(new FileLoggerProvider());
+            builder.Logging.SetMinimumLevel(LogLevel.Warning);
+
             builder.Services.AddSingleton<StateStore>();
 
             var app = builder.Build();
@@ -40,7 +53,7 @@ namespace CheckYouServer
             // 로컬 전용: http://localhost:5080 / LAN 접근: http://0.0.0.0:5080 (방화벽 포트 허용 필요)
             app.Urls.Clear();
             app.Urls.Add(serverConfig.Url);
-            Console.WriteLine($"[server] 수신 주소: {serverConfig.Url}");
+            FileLog.Info($"[server] 수신 주소: {serverConfig.Url}");
 
             // 종료 시 절전 억제 해제.
             app.Lifetime.ApplicationStopping.Register(() => PowerKeepAwake.Disable());
@@ -76,11 +89,9 @@ namespace CheckYouServer
                 return Results.Json(store.SetInterval(req.IntervalSeconds));
             });
 
-            // 여기서부터 요청을 받기 시작하고, 종료(Ctrl+C 등) 될 때까지 블로킹된다.
+            // 여기서부터 요청을 받기 시작하고, 종료 될 때까지 블로킹된다.
+            // (종료 마커는 Main 에서 출력한다.)
             app.Run();
-
-            // app.Run() 이 반환되면 서버가 정상 종료된 것.
-            Console.WriteLine("===== CheckYouServer 종료 =====");
         }
     }
 
