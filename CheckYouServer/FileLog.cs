@@ -10,6 +10,13 @@ namespace CheckYouServer
         private static readonly object _lock = new();
         private static string _path = "";
         private const long MaxBytes = 1_000_000; // 약 1MB
+        private static bool _echoConsole = false;
+
+        // 디버깅 중(콘솔 있을 때) 로그를 콘솔에도 출력하도록 켠다.
+        public static void EnableConsoleEcho()
+        {
+            _echoConsole = true;
+        }
 
         public static void Init(string baseDir)
         {
@@ -55,6 +62,11 @@ namespace CheckYouServer
                 {
                     Rotate();
                     File.AppendAllText(_path, line, Encoding.UTF8);
+
+                    if (_echoConsole)
+                    {
+                        Console.Write(line);
+                    }
                 }
             }
             catch

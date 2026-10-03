@@ -6,6 +6,14 @@ namespace CheckYouServer
         {
             // WinExe(창 없음): 로그를 파일(logs\server.log)로 남긴다.
             FileLog.Init(AppContext.BaseDirectory);
+
+            // 디버깅 중에만 콘솔을 띄워 로그가 눈에 보이게 한다.
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                DebugConsole.Enable();
+                FileLog.EnableConsoleEcho();
+            }
+
             FileLog.Info("===== CheckYouServer 시작 =====");
 
             try
@@ -40,10 +48,20 @@ namespace CheckYouServer
                 ContentRootPath = AppContext.BaseDirectory,
             });
 
-            // 콘솔이 없으므로 로그는 파일로 보낸다. 요청마다 찍히는 소음은 Warning 이상만.
+            // 로그는 파일로 보낸다. 요청마다 찍히는 소음은 Warning 이상만.
             builder.Logging.ClearProviders();
             builder.Logging.AddProvider(new FileLoggerProvider());
-            builder.Logging.SetMinimumLevel(LogLevel.Warning);
+
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                // 디버깅 중에는 콘솔에도 프레임워크 로그를 Information 레벨까지 보여준다.
+                builder.Logging.AddConsole();
+                builder.Logging.SetMinimumLevel(LogLevel.Information);
+            }
+            else
+            {
+                builder.Logging.SetMinimumLevel(LogLevel.Warning);
+            }
 
             builder.Services.AddSingleton<StateStore>();
 
