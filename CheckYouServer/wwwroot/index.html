@@ -99,7 +99,7 @@
 <body>
   <div class="wrap">
     <h1>CheckYou 제한 설정</h1>
-    <div class="sub">제한적용 = 해당 프로그램을 자동 종료 · 제한해제 = 통과시킴</div>
+    <div class="sub">제한 중 = 해당 프로그램을 자동 종료 · 허용 중 = 통과시킴</div>
 
     <div class="card">
       <div class="bar">
@@ -108,8 +108,8 @@
         <span style="color:var(--muted)">초</span>
         <button class="btn" onclick="saveInterval()">주기 저장</button>
         <span style="flex:1"></span>
-        <button class="btn accent" onclick="setAll(true)">모두 제한적용</button>
-        <button class="btn" onclick="setAll(false)">모두 제한해제</button>
+        <button class="btn accent" onclick="setAll(true)">모두 제한</button>
+        <button class="btn" onclick="setAll(false)">모두 허용</button>
       </div>
     </div>
 
@@ -159,7 +159,7 @@
 
         const btn = document.createElement("button");
         btn.className = "toggle " + (item.enabled ? "on" : "off");
-        btn.textContent = item.enabled ? "제한적용" : "제한해제";
+        btn.textContent = item.enabled ? "제한 중" : "허용 중";
         btn.onclick = () => toggle(item, !item.enabled);
 
         row.appendChild(main);
