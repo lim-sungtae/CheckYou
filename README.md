@@ -26,14 +26,19 @@
 ## 실행
 
 ```bash
-# 1) 서버 먼저
-dotnet run --project CheckYouServer     # http://localhost:5080
+# 1) 서버 먼저 (수신 주소는 server.json 의 url, 기본값 http://192.168.45.123:5080)
+dotnet run --project CheckYouServer
 
-# 2) 클라이언트
+# 2) 클라이언트 (접속 주소는 config.json 의 serverUrl)
 dotnet run --project CheckYouCs
 ```
 
-브라우저에서 `http://localhost:5080` 접속 → 항목별 제한적용/제한해제, 검사 주기 변경.
+브라우저에서 `server.json` 의 `url`(예: `http://192.168.45.123:5080`)로 접속
+→ 항목별 제한적용/제한해제, 검사 주기 변경.
+
+> 수신/접속 주소는 아래 설정 파일로 바꾼다. 다른 기기(폰 등)에서 접속하려면 해당 PC의
+> Windows 방화벽에서 포트(기본 5080) 인바운드를 허용해야 한다. 특정 NIC가 아니라 모든
+> 인터페이스에서 받고 싶으면 서버 `url` 을 `http://0.0.0.0:5080` 으로 두면 된다.
 
 ## 로그
 

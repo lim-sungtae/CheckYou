@@ -1,4 +1,4 @@
 {
-  "url": "http://localhost:5080",
+  "url": "http://192.168.45.123:5080",
   "keepAwake": true
 }

@@ -1,5 +1,5 @@
 {
-  "serverUrl": "http://localhost:5080",
+  "serverUrl": "http://192.168.45.123:5080",
   "intervalSeconds": 5,
   "blockedTitleKeywords": [
     "YouTube"
