@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CheckYouCs/CheckYouCs.csproj" />
+  <Project Path="CheckYouServer/CheckYouServer.csproj" />
+</Solution>

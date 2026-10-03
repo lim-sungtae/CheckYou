@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>CheckYou</AssemblyName>
+    <RootNamespace>CheckYou</RootNamespace>
+    <!-- 백그라운드 상주: 콘솔 창을 띄우지 않으려면 WinExe 로 바꾸면 됩니다.
+         기본은 콘솔(로그 확인용)으로 두었습니다. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- config\config.json 을 출력 폴더의 같은 config\ 하위로 복사한다.
+         디버그(bin\Debug\...)와 릴리즈(bin\Release\...) 양쪽 모두
+         실행파일 옆 config\config.json 을 참조하게 된다. -->
+    <None Update="config\config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

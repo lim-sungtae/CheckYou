@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>CheckYouServer</RootNamespace>
+    <AssemblyName>CheckYouServer</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 빌드로 만든 exe 를 단독 실행해도 UI가 뜨도록 wwwroot 를 출력 폴더로 복사한다.
+         (dotnet publish 뿐 아니라 일반 build/실행에서도 동작) -->
+    <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- 서버 설정 파일을 출력 폴더의 config\ 하위로 복사 (없으면 실행 시 자동 생성됨) -->
+    <None Update="config\server.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

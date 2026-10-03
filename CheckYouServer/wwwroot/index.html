@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CheckYou 제한 설정</title>
+  <style>
+    :root
+    {
+      --bg: #0f1216;
+      --card: #1a1f27;
+      --line: #2a313c;
+      --text: #e6e9ee;
+      --muted: #9aa4b2;
+      --on: #2ecc71;
+      --off: #e74c3c;
+      --accent: #4a90d9;
+    }
+    * { box-sizing: border-box; }
+    body
+    {
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 20px; margin: 8px 0 4px; }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .card
+    {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    .row
+    {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: none; }
+    .item-main { display: flex; flex-direction: column; gap: 2px; }
+    .item-value { font-size: 15px; font-weight: 600; }
+    .item-type { font-size: 12px; color: var(--muted); }
+    .badge
+    {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #223;
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    .toggle
+    {
+      border: none;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      min-width: 92px;
+    }
+    .toggle.on { background: var(--on); }
+    .toggle.off { background: var(--off); }
+    .bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .btn
+    {
+      border: 1px solid var(--line);
+      background: #222a34;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn.accent { background: var(--accent); border-color: var(--accent); }
+    input[type=number]
+    {
+      width: 70px;
+      background: #0e1218;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+    .status { font-size: 12px; color: var(--muted); margin-top: 10px; }
+    label { font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>CheckYou 제한 설정</h1>
+    <div class="sub">제한적용 = 해당 프로그램을 자동 종료 · 제한해제 = 통과시킴</div>
+
+    <div class="card">
+      <div class="bar">
+        <label>검사 주기</label>
+        <input type="number" id="interval" min="1" max="3600" />
+        <span style="color:var(--muted)">초</span>
+        <button class="btn" onclick="saveInterval()">주기 저장</button>
+        <span style="flex:1"></span>
+        <button class="btn accent" onclick="setAll(true)">모두 제한적용</button>
+        <button class="btn" onclick="setAll(false)">모두 제한해제</button>
+      </div>
+    </div>
+
+    <div class="card" id="items"></div>
+
+    <div class="status" id="status">불러오는 중...</div>
+  </div>
+
+  <script>
+    const typeLabel = { process: "프로세스 이름", title: "창 제목 키워드" };
+
+    async function load()
+    {
+      try
+      {
+        const res = await fetch("/api/flags", { cache: "no-store" });
+        const state = await res.json();
+        render(state);
+        setStatus("최근 갱신: " + new Date().toLocaleTimeString());
+      }
+      catch (e)
+      {
+        setStatus("서버 연결 실패: " + e);
+      }
+    }
+
+    function render(state)
+    {
+      document.getElementById("interval").value = state.intervalSeconds;
+      const box = document.getElementById("items");
+      if (!state.items || state.items.length === 0)
+      {
+        box.innerHTML = '<div style="color:var(--muted);padding:8px 0">등록된 제한 항목이 없습니다. (CheckYou 클라이언트가 실행되면 config 목록이 올라옵니다.)</div>';
+        return;
+      }
+      box.innerHTML = "";
+      for (const item of state.items)
+      {
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const main = document.createElement("div");
+        main.className = "item-main";
+        main.innerHTML =
+          '<span class="item-value">' + escapeHtml(item.value) + '</span>' +
+          '<span class="item-type">' + (typeLabel[item.type] || item.type) + '</span>';
+
+        const btn = document.createElement("button");
+        btn.className = "toggle " + (item.enabled ? "on" : "off");
+        btn.textContent = item.enabled ? "제한적용" : "제한해제";
+        btn.onclick = () => toggle(item, !item.enabled);
+
+        row.appendChild(main);
+        row.appendChild(btn);
+        box.appendChild(row);
+      }
+    }
+
+    async function toggle(item, enabled)
+    {
+      await post("/api/items/toggle", { type: item.type, value: item.value, enabled });
+      load();
+    }
+
+    async function setAll(enabled)
+    {
+      await post("/api/all", { enabled });
+      load();
+    }
+
+    async function saveInterval()
+    {
+      const v = parseInt(document.getElementById("interval").value, 10);
+      if (v > 0)
+      {
+        await post("/api/interval", { intervalSeconds: v });
+        load();
+      }
+    }
+
+    async function post(url, body)
+    {
+      try
+      {
+        await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+      catch (e)
+      {
+        setStatus("요청 실패: " + e);
+      }
+    }
+
+    function escapeHtml(s)
+    {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function setStatus(t) { document.getElementById("status").textContent = t; }
+
+    load();
+    setInterval(load, 3000); // 다른 기기/클라이언트 변경을 반영하기 위해 주기적 새로고침
+  </script>
+</body>
+</html>
