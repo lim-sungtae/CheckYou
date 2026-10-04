@@ -28,7 +28,10 @@ namespace CheckYouServer
         public List<BlockItem> Items { get; set; } = new();
     }
 
-    // 상태 보관소. 메모리 + 파일(config\state.json)에 영속화하며 스레드 안전하게 접근한다.
+    // 제한목록 보관소. 서버가 config\blocklist.json 을 소유한다.
+    //   - 시작 시 파일을 읽어 목록/플래그/주기를 로드한다. (클라이언트 없이도 동작)
+    //   - 파일이 없으면 기본 목록으로 생성(seed)한다.
+    //   - 웹에서 수정하면 이 파일에 저장 → 재기동 시 그대로 적용된다.
     public sealed class StateStore
     {
         private readonly object _lock = new();
@@ -45,7 +48,7 @@ namespace CheckYouServer
         {
             string dir = Path.Combine(AppContext.BaseDirectory, "config");
             Directory.CreateDirectory(dir);
-            _path = Path.Combine(dir, "state.json");
+            _path = Path.Combine(dir, "blocklist.json");
             Load();
         }
 
@@ -57,17 +60,40 @@ namespace CheckYouServer
                 {
                     string json = File.ReadAllText(_path);
                     BlockState? loaded = JsonSerializer.Deserialize<BlockState>(json, JsonOptions);
-                    if (loaded != null)
+                    if (loaded != null && loaded.Items.Count > 0)
                     {
+                        if (loaded.IntervalSeconds <= 0)
+                        {
+                            loaded.IntervalSeconds = 5;
+                        }
                         _state = loaded;
+                        return;
                     }
                 }
             }
             catch
             {
-                // 파일이 깨졌으면 빈 상태로 시작
-                _state = new BlockState();
+                // 파일이 깨졌으면 아래 기본값으로 생성
             }
+
+            // 파일이 없거나 비어있으면 기본 목록으로 생성한다.
+            _state = Default();
+            SaveNoLock();
+        }
+
+        // 기본 제한목록 (클라이언트 config 와 동일한 목록, 전부 제한).
+        private static BlockState Default()
+        {
+            return new BlockState
+            {
+                IntervalSeconds = 5,
+                Items = new List<BlockItem>
+                {
+                    new() { Type = "title", Value = "YouTube", Enabled = true },
+                    new() { Type = "process", Value = "Overwatch", Enabled = true },
+                    new() { Type = "process", Value = "RobloxPlayerBeta", Enabled = true },
+                },
+            };
         }
 
         private void SaveNoLock()
@@ -88,38 +114,6 @@ namespace CheckYouServer
             lock (_lock)
             {
                 // 복사본을 돌려준다.
-                return Clone(_state);
-            }
-        }
-
-        // CheckYou 시작 시 호출. 클라이언트 config 목록으로 항목을 재구성하고 모두 제한적용으로 리셋한다.
-        public BlockState Init(BlockState incoming)
-        {
-            lock (_lock)
-            {
-                BlockState fresh = new()
-                {
-                    IntervalSeconds = incoming.IntervalSeconds > 0 ? incoming.IntervalSeconds : 5,
-                    Items = new List<BlockItem>(),
-                };
-
-                foreach (BlockItem item in incoming.Items)
-                {
-                    if (string.IsNullOrWhiteSpace(item.Value))
-                    {
-                        continue;
-                    }
-
-                    fresh.Items.Add(new BlockItem
-                    {
-                        Type = NormalizeType(item.Type),
-                        Value = item.Value.Trim(),
-                        Enabled = true, // 재실행 시 전부 제한적용
-                    });
-                }
-
-                _state = fresh;
-                SaveNoLock();
                 return Clone(_state);
             }
         }

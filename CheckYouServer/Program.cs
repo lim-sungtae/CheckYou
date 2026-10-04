@@ -84,14 +84,8 @@ namespace CheckYouServer
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
-            // CheckYou 클라이언트가 5초마다 호출: 현재 플래그 상태를 가져간다.
+            // CheckYou 클라이언트가 5초마다 호출: 현재 설정(제한목록+플래그)을 가져간다.
             app.MapGet("/api/flags", (StateStore store) => Results.Json(store.Get()));
-
-            // CheckYou 시작 시 호출: config 목록으로 항목을 재구성하고 전부 제한적용으로 리셋.
-            app.MapPost("/api/init", (BlockState incoming, StateStore store) =>
-            {
-                return Results.Json(store.Init(incoming));
-            });
 
             // 웹 UI: 항목 하나의 제한적용/해제 토글.
             app.MapPost("/api/items/toggle", (ToggleRequest req, StateStore store) =>
