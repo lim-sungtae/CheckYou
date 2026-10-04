@@ -14,6 +14,7 @@ namespace CheckYou
         private static Config _config = new();
         private static ServerClient? _server;
         private static BlockState _current = new();
+        private static BlockState _local = new(); // 서버 미연결 시 사용할 로컬 config
 
         private static async Task<int> Main()
         {
@@ -25,16 +26,20 @@ namespace CheckYou
 
             _server = new ServerClient(_config.ServerUrl);
 
-            // 시작 시: config 목록으로 서버를 "전부 제한적용"으로 리셋.
-            BlockState startup = BlockState.FromConfig(_config);
-            BlockState? initialized = await _server.InitAsync(startup);
-            _current = initialized ?? startup; // 서버 실패 시 로컬 config(전부 적용)로 동작
+            // 기본값: 로컬 config (서버 없을 때 이대로 동작, 전부 제한).
+            _local = BlockState.FromConfig(_config);
+            _current = _local;
+
+            // 서버가 있으면 서버가 응답한 설정을 사용한다.
+            BlockState? flags = await _server.GetFlagsAsync();
+            bool connected = flags != null;
+            _current = flags ?? _local;
 
             Logger.Info("CheckYou (C#) 시작");
             Logger.Info($"  서버 주소      : {_config.ServerUrl}");
             Logger.Info($"  검사 주기      : {_current.IntervalSeconds}초");
-            Logger.Info($"  제한 항목 수   : {_current.Items.Count}개 (시작 시 전부 제한적용)");
-            Logger.Info($"  서버 연동      : {(initialized != null ? "성공" : "실패 - 로컬 config로 동작")}");
+            Logger.Info($"  제한 항목 수   : {_current.Items.Count}개");
+            Logger.Info($"  설정 출처      : {(connected ? "서버" : "로컬 config (서버 미연결)")}");
 
             using CancellationTokenSource cts = new();
             Console.CancelKeyPress += (_, e) =>
@@ -61,12 +66,9 @@ namespace CheckYou
             while (!token.IsCancellationRequested)
             {
                 // (1) 프로세스 확인 전에 서버에 플래그 질의.
+                //     서버 연결되면 서버 설정, 아니면 로컬 config 사용.
                 BlockState? flags = await _server!.GetFlagsAsync();
-                if (flags != null)
-                {
-                    _current = flags;
-                }
-                // flags == null 이면 마지막 상태(_current)를 그대로 사용.
+                _current = flags ?? _local;
 
                 // (2) 제한적용 항목만 종료.
                 EnforceEnabled();

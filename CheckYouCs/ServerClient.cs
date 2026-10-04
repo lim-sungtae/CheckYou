@@ -3,8 +3,8 @@ using System.Net.Http.Json;
 namespace CheckYou
 {
     // CheckYou 서버와 통신한다.
-    //   - InitAsync : 시작 시 config 목록을 올려 전부 제한적용으로 리셋
-    //   - GetFlagsAsync : 매 주기마다 현재 플래그 상태를 가져옴
+    //   - GetFlagsAsync : 매 주기마다 서버의 현재 설정(제한목록+플래그)을 가져옴
+    // 서버가 설정을 소유하므로 클라이언트는 목록을 올리지 않는다(읽기 전용).
     internal sealed class ServerClient
     {
         private readonly HttpClient _http;
@@ -16,21 +16,6 @@ namespace CheckYou
                 BaseAddress = new Uri(baseUrl),
                 Timeout = TimeSpan.FromSeconds(4),
             };
-        }
-
-        public async Task<BlockState?> InitAsync(BlockState state)
-        {
-            try
-            {
-                HttpResponseMessage res = await _http.PostAsJsonAsync("/api/init", state);
-                res.EnsureSuccessStatusCode();
-                return await res.Content.ReadFromJsonAsync<BlockState>();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"[server] init 실패: {ex.Message}");
-                return null;
-            }
         }
 
         public async Task<BlockState?> GetFlagsAsync()
